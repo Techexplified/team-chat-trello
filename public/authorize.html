@@ -55,19 +55,52 @@
         margin-top: 12px;
         display: none;
       }
+
+      /* --- success state --- */
+      #success-view {
+        display: none;
+      }
+      .check-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #1f845a;
+        color: #fff;
+        font-size: 26px;
+        line-height: 48px;
+        margin: 0 auto 14px;
+      }
+      .done-btn {
+        background: #f1f2f4;
+        color: #172b4d;
+      }
+      .done-btn:hover:not(:disabled) {
+        background: #dcdfe4;
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <h1>Authorize Team Chat</h1>
-      <p>To get started, authorize this Power-Up with Trello.</p>
-      <button id="authorize-btn" type="button">Authorize Team Chat</button>
-      <div class="error" id="error-msg"></div>
+      <!-- Before authorization -->
+      <div id="authorize-view">
+        <h1>Authorize Team Chat</h1>
+        <p>To get started, authorize this Power-Up with Trello.</p>
+        <button id="authorize-btn" type="button">Authorize Team Chat</button>
+        <div class="error" id="error-msg"></div>
+      </div>
+
+      <!-- After authorization (dummy success UI) -->
+      <div id="success-view">
+        <div class="check-circle">&#10003;</div>
+        <h1>You're all set!</h1>
+        <p>Team Chat is now authorized on this board.</p>
+        <button id="done-btn" type="button" class="done-btn">Done</button>
+      </div>
     </div>
 
     <script>
       // Must match power-up.js
-      var APP_KEY = "ae89c42ec46dffc9aa9823aa7d578b3a";
+      var APP_KEY = "YOUR_TRELLO_API_KEY";
       var APP_NAME = "Team Chat";
 
       var t = window.TrelloPowerUp.iframe({
@@ -75,8 +108,16 @@
         appName: APP_NAME,
       });
 
+      var authorizeView = document.getElementById("authorize-view");
+      var successView = document.getElementById("success-view");
       var btn = document.getElementById("authorize-btn");
+      var doneBtn = document.getElementById("done-btn");
       var errorMsg = document.getElementById("error-msg");
+
+      function showSuccess() {
+        authorizeView.style.display = "none";
+        successView.style.display = "block";
+      }
 
       btn.addEventListener("click", function () {
         btn.disabled = true;
@@ -86,7 +127,9 @@
         t.getRestApi()
           .authorize({ scope: "read,write", expiration: "never" })
           .then(function () {
-            return t.closePopup();
+            // Swap in the dummy success UI instead of closing right away
+            // so the member gets clear confirmation it worked.
+            showSuccess();
           })
           .catch(function (err) {
             btn.disabled = false;
@@ -103,6 +146,20 @@
             }
           });
       });
+
+      doneBtn.addEventListener("click", function () {
+        t.closePopup();
+      });
+
+      // If the member already authorized in a previous session and somehow
+      // lands back on this page, skip straight to the success view.
+      t.getRestApi()
+        .isAuthorized()
+        .then(function (isAuthorized) {
+          if (isAuthorized) {
+            showSuccess();
+          }
+        });
     </script>
   </body>
 </html>
