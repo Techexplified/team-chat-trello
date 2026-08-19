@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Authorize</title>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+      .wrap {
+        padding: 24px 20px;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 8px;
+        color: var(--ds-text, #172b4d);
+      }
+      p {
+        font-size: 13px;
+        line-height: 1.4;
+        margin: 0 0 20px;
+        color: var(--ds-text-subtle, #6b778c);
+      }
+      button {
+        background: #0c66e4;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+      }
+      button:hover:not(:disabled) {
+        background: #0055cc;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .error {
+        color: #c9372c;
+        font-size: 12px;
+        margin-top: 12px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Authorize Team Chat</h1>
+      <p>To get started, authorize this Power-Up with Trello.</p>
+      <button id="authorize-btn" type="button">Authorize Team Chat</button>
+      <div class="error" id="error-msg"></div>
+    </div>
+
+    <script>
+      // Must match power-up.js
+      var APP_KEY = "ae89c42ec46dffc9aa9823aa7d578b3a";
+      var APP_NAME = "Team Chat";
+
+      var t = window.TrelloPowerUp.iframe({
+        appKey: APP_KEY,
+        appName: APP_NAME,
+      });
+
+      var btn = document.getElementById("authorize-btn");
+      var errorMsg = document.getElementById("error-msg");
+
+      btn.addEventListener("click", function () {
+        btn.disabled = true;
+        btn.textContent = "Authorizing…";
+        errorMsg.style.display = "none";
+
+        t.getRestApi()
+          .authorize({ scope: "read,write", expiration: "never" })
+          .then(function () {
+            return t.closePopup();
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            btn.textContent = "Authorize Team Chat";
+            errorMsg.style.display = "block";
+            if (
+              window.TrelloPowerUp.restApiError &&
+              err instanceof window.TrelloPowerUp.restApiError.AuthDeniedError
+            ) {
+              errorMsg.textContent =
+                "Authorization was cancelled. Please try again.";
+            } else {
+              errorMsg.textContent = "Something went wrong. Please try again.";
+            }
+          });
+      });
+    </script>
+  </body>
+</html>
