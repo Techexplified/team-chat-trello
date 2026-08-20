@@ -9,27 +9,238 @@
       body {
         margin: 0;
         padding: 0;
-        background: transparent;
+        height: 100%;
+        background: #1d2125;
         font-family:
           -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
           Arial, sans-serif;
       }
-      .wrap {
-        padding: 20px;
-        text-align: center;
-        color: var(--ds-text-subtle, #6b778c);
+
+      .chat-wrap {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .msg {
+        display: flex;
+        gap: 10px;
+      }
+
+      .avatar {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 50%;
+        background: #579dff;
+        color: #09326c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
         font-size: 13px;
+      }
+
+      .msg-header {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+
+      .msg-name {
+        font-weight: 600;
+        font-size: 13px;
+        color: #dcdfe4;
+      }
+
+      .msg-time {
+        font-size: 11px;
+        color: #8c9bab;
+      }
+
+      .msg-text {
+        display: inline-block;
+        font-size: 13px;
+        color: #b6c2cf;
+        background: #282e33;
+        border: 1px solid #38414a;
+        border-radius: 8px;
+        padding: 8px 12px;
+      }
+
+      .empty-state {
+        margin: auto;
+        text-align: center;
+        color: #8c9bab;
+        font-size: 13px;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 8px;
+        padding: 10px;
+        background: #22272b;
+        border-top: 1px solid #3d444b;
+        box-sizing: border-box;
+      }
+
+      .input-row input {
+        flex: 1;
+        background: #1d2125;
+        border: 1px solid #3d444b;
+        border-radius: 6px;
+        padding: 9px 10px;
+        color: #dcdfe4;
+        font-size: 13px;
+        outline: none;
+        min-width: 0;
+      }
+
+      .input-row input::placeholder {
+        color: #738496;
+      }
+
+      .input-row input:focus {
+        border-color: #579dff;
+      }
+
+      .input-row button {
+        background: #579dff;
+        color: #09326c;
+        border: none;
+        border-radius: 6px;
+        padding: 0 16px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .input-row button:hover {
+        background: #85b8ff;
+      }
+
+      .input-row button:disabled {
+        opacity: 0.5;
+        cursor: default;
       }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      You're authorized 🎉<br />
-      Build the real chat UI here.
+    <div class="chat-wrap">
+      <div class="messages" id="messages">
+        <div class="empty-state" id="empty-state">
+          No messages yet. Say hi 👋
+        </div>
+      </div>
+      <div class="input-row">
+        <input
+          type="text"
+          id="msg-input"
+          placeholder="Type your message here..."
+        />
+        <button id="send-btn" type="button">Send</button>
+      </div>
     </div>
+
     <script>
-      // Kept for future use once this page needs live board/member data:
-      // var t = window.TrelloPowerUp.iframe();
+      var t = window.TrelloPowerUp.iframe();
+
+      var messagesEl = document.getElementById("messages");
+      var emptyState = document.getElementById("empty-state");
+      var input = document.getElementById("msg-input");
+      var sendBtn = document.getElementById("send-btn");
+
+      // Dummy local state — replace with real data once the chat backend exists.
+      var currentUserName = "You";
+
+      function initials(name) {
+        return name
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(function (part) {
+            return part[0].toUpperCase();
+          })
+          .join("");
+      }
+
+      function renderMessage(name, text) {
+        if (emptyState) {
+          emptyState.remove();
+          emptyState = null;
+        }
+
+        var msg = document.createElement("div");
+        msg.className = "msg";
+
+        var avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = initials(name);
+
+        var body = document.createElement("div");
+
+        var header = document.createElement("div");
+        header.className = "msg-header";
+
+        var nameEl = document.createElement("span");
+        nameEl.className = "msg-name";
+        nameEl.textContent = name;
+
+        var timeEl = document.createElement("span");
+        timeEl.className = "msg-time";
+        timeEl.textContent = "a few seconds ago";
+
+        header.appendChild(nameEl);
+        header.appendChild(timeEl);
+
+        var textEl = document.createElement("div");
+        textEl.className = "msg-text";
+        textEl.textContent = text;
+
+        body.appendChild(header);
+        body.appendChild(textEl);
+
+        msg.appendChild(avatar);
+        msg.appendChild(body);
+
+        messagesEl.appendChild(msg);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function sendMessage() {
+        var text = input.value.trim();
+        if (!text) return;
+        renderMessage(currentUserName, text);
+        input.value = "";
+        input.focus();
+      }
+
+      sendBtn.addEventListener("click", sendMessage);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      // Use the real Trello member name for the dummy "You" label once available.
+      t.member("all")
+        .then(function (member) {
+          if (member && member.fullName) {
+            currentUserName = member.fullName;
+          }
+        })
+        .catch(function () {
+          // ignore — fall back to "You"
+        });
     </script>
   </body>
 </html>
