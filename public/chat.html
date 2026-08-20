@@ -77,13 +77,23 @@
         border: 1px solid #38414a;
         border-radius: 8px;
         padding: 8px 12px;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
 
-      .empty-state {
+      .empty-state,
+      .status-line {
         margin: auto;
         text-align: center;
         color: #8c9bab;
         font-size: 13px;
+      }
+
+      .limit-note {
+        font-size: 11px;
+        color: #738496;
+        text-align: center;
+        padding: 4px 0 0;
       }
 
       .input-row {
@@ -126,7 +136,7 @@
         cursor: pointer;
       }
 
-      .input-row button:hover {
+      .input-row button:hover:not(:disabled) {
         background: #85b8ff;
       }
 
@@ -139,15 +149,14 @@
   <body>
     <div class="chat-wrap">
       <div class="messages" id="messages">
-        <div class="empty-state" id="empty-state">
-          No messages yet. Say hi 👋
-        </div>
+        <div class="status-line" id="status-line">Loading messages…</div>
       </div>
       <div class="input-row">
         <input
           type="text"
           id="msg-input"
           placeholder="Type your message here..."
+          maxlength="500"
         />
         <button id="send-btn" type="button">Send</button>
       </div>
@@ -156,16 +165,32 @@
     <script>
       var t = window.TrelloPowerUp.iframe();
 
+      // ---------------------------------------------------------------
+      // Storage strategy: no database. Messages live in Trello's own
+      // Power-Up data store, at board scope / shared visibility, so
+      // every member on the board can read and write them via
+      // t.get('board', 'shared', 'messages') / t.set(...).
+      //
+      // Trello caps board+shared storage at 8192 characters TOTAL for
+      // this key (see Trello's Power-Up data limits). We keep a safety
+      // margin and drop the oldest messages once we get close, so the
+      // chat behaves like a rolling window of recent messages rather
+      // than an unbounded log.
+      // ---------------------------------------------------------------
+      var STORAGE_KEY = "messages";
+      var MAX_STORED_CHARS = 7800; // stay under Trello's 8192 cap with margin
+      var POLL_INTERVAL_MS = 3000;
+
       var messagesEl = document.getElementById("messages");
-      var emptyState = document.getElementById("empty-state");
+      var statusLine = document.getElementById("status-line");
       var input = document.getElementById("msg-input");
       var sendBtn = document.getElementById("send-btn");
 
-      // Dummy local state — replace with real data once the chat backend exists.
-      var currentUserName = "You";
+      var currentMember = { id: "me", name: "You", initials: "Y" };
+      var lastRenderedIds = "";
 
       function initials(name) {
-        return name
+        return (name || "?")
           .split(" ")
           .filter(Boolean)
           .slice(0, 2)
@@ -175,55 +200,151 @@
           .join("");
       }
 
-      function renderMessage(name, text) {
-        if (emptyState) {
-          emptyState.remove();
-          emptyState = null;
+      function timeAgo(ts) {
+        var diff = Math.max(0, Date.now() - ts);
+        var mins = Math.floor(diff / 60000);
+        if (mins < 1) return "a few seconds ago";
+        if (mins === 1) return "1 minute ago";
+        if (mins < 60) return mins + " minutes ago";
+        var hours = Math.floor(mins / 60);
+        if (hours === 1) return "1 hour ago";
+        if (hours < 24) return hours + " hours ago";
+        var days = Math.floor(hours / 24);
+        return days === 1 ? "1 day ago" : days + " days ago";
+      }
+
+      function renderMessages(list) {
+        var idSignature = list
+          .map(function (m) {
+            return m.id;
+          })
+          .join(",");
+        // Cheap guard so we don't blow away the DOM (and scroll position)
+        // on every poll tick when nothing actually changed.
+        if (idSignature === lastRenderedIds) {
+          // Still refresh relative timestamps even if content is unchanged.
+          var timeEls = messagesEl.querySelectorAll("[data-ts]");
+          timeEls.forEach(function (el) {
+            el.textContent = timeAgo(Number(el.getAttribute("data-ts")));
+          });
+          return;
+        }
+        lastRenderedIds = idSignature;
+
+        messagesEl.innerHTML = "";
+
+        if (!list.length) {
+          var empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "No messages yet. Say hi 👋";
+          messagesEl.appendChild(empty);
+          return;
         }
 
-        var msg = document.createElement("div");
-        msg.className = "msg";
+        list.forEach(function (m) {
+          var msg = document.createElement("div");
+          msg.className = "msg";
 
-        var avatar = document.createElement("div");
-        avatar.className = "avatar";
-        avatar.textContent = initials(name);
+          var avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.textContent = initials(m.name);
 
-        var body = document.createElement("div");
+          var body = document.createElement("div");
 
-        var header = document.createElement("div");
-        header.className = "msg-header";
+          var header = document.createElement("div");
+          header.className = "msg-header";
 
-        var nameEl = document.createElement("span");
-        nameEl.className = "msg-name";
-        nameEl.textContent = name;
+          var nameEl = document.createElement("span");
+          nameEl.className = "msg-name";
+          nameEl.textContent = m.name;
 
-        var timeEl = document.createElement("span");
-        timeEl.className = "msg-time";
-        timeEl.textContent = "a few seconds ago";
+          var timeEl = document.createElement("span");
+          timeEl.className = "msg-time";
+          timeEl.setAttribute("data-ts", m.ts);
+          timeEl.textContent = timeAgo(m.ts);
 
-        header.appendChild(nameEl);
-        header.appendChild(timeEl);
+          header.appendChild(nameEl);
+          header.appendChild(timeEl);
 
-        var textEl = document.createElement("div");
-        textEl.className = "msg-text";
-        textEl.textContent = text;
+          var textEl = document.createElement("div");
+          textEl.className = "msg-text";
+          textEl.textContent = m.text;
 
-        body.appendChild(header);
-        body.appendChild(textEl);
+          body.appendChild(header);
+          body.appendChild(textEl);
 
-        msg.appendChild(avatar);
-        msg.appendChild(body);
+          msg.appendChild(avatar);
+          msg.appendChild(body);
+          messagesEl.appendChild(msg);
+        });
 
-        messagesEl.appendChild(msg);
         messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function loadMessages() {
+        return t.get("board", "shared", STORAGE_KEY, []);
+      }
+
+      function trimToFit(list) {
+        // Drop oldest messages until the serialized array fits Trello's
+        // per-key storage cap.
+        var trimmed = list.slice();
+        while (
+          trimmed.length &&
+          JSON.stringify(trimmed).length > MAX_STORED_CHARS
+        ) {
+          trimmed.shift();
+        }
+        return trimmed;
+      }
+
+      function refresh() {
+        loadMessages()
+          .then(function (list) {
+            renderMessages(list || []);
+          })
+          .catch(function () {
+            statusLine.textContent = "Could not load messages.";
+          });
       }
 
       function sendMessage() {
         var text = input.value.trim();
         if (!text) return;
-        renderMessage(currentUserName, text);
-        input.value = "";
-        input.focus();
+
+        sendBtn.disabled = true;
+
+        // Re-fetch right before writing to minimize (not eliminate) the
+        // chance of clobbering another member's message that landed
+        // between polls. There's no locking without a real backend, so
+        // this is a best-effort, last-write-wins strategy.
+        loadMessages()
+          .then(function (list) {
+            list = list || [];
+            list.push({
+              id: currentMember.id + "-" + Date.now(),
+              name: currentMember.name,
+              text: text,
+              ts: Date.now(),
+            });
+            list = trimToFit(list);
+            return t
+              .set("board", "shared", STORAGE_KEY, list)
+              .then(function () {
+                return list;
+              });
+          })
+          .then(function (list) {
+            renderMessages(list);
+            input.value = "";
+          })
+          .catch(function (err) {
+            statusLine.textContent = "Message failed to send.";
+          })
+          .finally(function () {
+            sendBtn.disabled = false;
+            input.focus();
+          });
       }
 
       sendBtn.addEventListener("click", sendMessage);
@@ -231,16 +352,25 @@
         if (e.key === "Enter") sendMessage();
       });
 
-      // Use the real Trello member name for the dummy "You" label once available.
       t.member("all")
         .then(function (member) {
-          if (member && member.fullName) {
-            currentUserName = member.fullName;
+          if (member) {
+            currentMember = {
+              id: member.id,
+              name: member.fullName || "Member",
+              initials: member.initials || initials(member.fullName),
+            };
           }
+          refresh();
         })
         .catch(function () {
-          // ignore — fall back to "You"
+          refresh();
         });
+
+      // Simple polling so members see each other's messages without a
+      // real-time backend. Cleared automatically when the popup iframe
+      // is torn down.
+      setInterval(refresh, POLL_INTERVAL_MS);
     </script>
   </body>
 </html>
