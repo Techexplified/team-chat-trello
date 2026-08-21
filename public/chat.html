@@ -258,6 +258,29 @@
         return days === 1 ? "1 day ago" : days + " days ago";
       }
 
+      function loadMessages() {
+        return t.get("board", "shared", STORAGE_KEY, []);
+      }
+
+      function trimToFit(list) {
+        var trimmed = list.slice();
+        while (
+          trimmed.length &&
+          JSON.stringify(trimmed).length > MAX_STORED_CHARS
+        ) {
+          trimmed.shift();
+        }
+        return trimmed;
+      }
+
+      function isOwnMessage(m) {
+        // memberId is the reliable check for messages sent by the new code.
+        // Fall back to name-matching for any older messages already stored
+        // before this field existed.
+        if (m.memberId) return m.memberId === currentMember.id;
+        return m.name === currentMember.name;
+      }
+
       function renderMessages(list) {
         var signature = list
           .map(function (m) {
@@ -389,6 +412,42 @@
           .finally(function () {
             sendBtn.disabled = false;
             input.focus();
+          });
+      }
+
+      function deleteMessage(id, btnEl) {
+        if (btnEl) btnEl.disabled = true;
+
+        loadMessages()
+          .then(function (list) {
+            list = list || [];
+            var target = list.find(function (m) {
+              return m.id === id;
+            });
+
+            // Only ever remove a message that belongs to the current
+            // member — even if this were called some other way, we
+            // never delete someone else's message.
+            if (!target || !isOwnMessage(target)) {
+              return list;
+            }
+
+            var next = list.filter(function (m) {
+              return m.id !== id;
+            });
+            return t
+              .set("board", "shared", STORAGE_KEY, next)
+              .then(function () {
+                return next;
+              });
+          })
+          .then(function (list) {
+            lastRenderedSignature = "";
+            renderMessages(list);
+          })
+          .catch(function () {
+            statusLine.textContent = "Could not delete message.";
+            if (btnEl) btnEl.disabled = false;
           });
       }
 
