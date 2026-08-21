@@ -35,6 +35,7 @@
       .msg {
         display: flex;
         gap: 10px;
+        align-items: flex-start;
       }
 
       .avatar {
@@ -49,6 +50,11 @@
         justify-content: center;
         font-weight: 700;
         font-size: 13px;
+      }
+
+      .msg-body {
+        flex: 1;
+        min-width: 0;
       }
 
       .msg-header {
@@ -81,19 +87,51 @@
         word-break: break-word;
       }
 
+      .delete-btn {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border-radius: 6px;
+        background: #2c333a;
+        border: 1px solid #3d444b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.12s ease,
+          background 0.12s ease;
+        align-self: center;
+      }
+
+      .msg:hover .delete-btn.is-own {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .delete-btn:hover {
+        background: #3d444b;
+      }
+
+      .delete-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: #b6c2cf;
+      }
+
+      .delete-btn:disabled {
+        opacity: 0.5 !important;
+        cursor: default;
+      }
+
       .empty-state,
       .status-line {
         margin: auto;
         text-align: center;
         color: #8c9bab;
         font-size: 13px;
-      }
-
-      .limit-note {
-        font-size: 11px;
-        color: #738496;
-        text-align: center;
-        padding: 4px 0 0;
       }
 
       .input-row {
@@ -125,7 +163,7 @@
         border-color: #579dff;
       }
 
-      .input-row button {
+      .input-row button.send-btn {
         background: #579dff;
         color: #09326c;
         border: none;
@@ -136,11 +174,11 @@
         cursor: pointer;
       }
 
-      .input-row button:hover:not(:disabled) {
+      .input-row button.send-btn:hover:not(:disabled) {
         background: #85b8ff;
       }
 
-      .input-row button:disabled {
+      .input-row button.send-btn:disabled {
         opacity: 0.5;
         cursor: default;
       }
@@ -158,7 +196,7 @@
           placeholder="Type your message here..."
           maxlength="500"
         />
-        <button id="send-btn" type="button">Send</button>
+        <button class="send-btn" id="send-btn" type="button">Send</button>
       </div>
     </div>
 
@@ -172,14 +210,21 @@
       // t.get('board', 'shared', 'messages') / t.set(...).
       //
       // Trello caps board+shared storage at 8192 characters TOTAL for
-      // this key (see Trello's Power-Up data limits). We keep a safety
-      // margin and drop the oldest messages once we get close, so the
-      // chat behaves like a rolling window of recent messages rather
-      // than an unbounded log.
+      // this key. We keep a safety margin and drop the oldest messages
+      // once we get close, so the chat behaves like a rolling window of
+      // recent messages rather than an unbounded log.
       // ---------------------------------------------------------------
       var STORAGE_KEY = "messages";
       var MAX_STORED_CHARS = 7800; // stay under Trello's 8192 cap with margin
       var POLL_INTERVAL_MS = 3000;
+
+      var TRASH_ICON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polyline points="3 6 5 6 21 6"></polyline>' +
+        '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
+        '<path d="M10 11v6"></path><path d="M14 11v6"></path>' +
+        '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>' +
+        "</svg>";
 
       var messagesEl = document.getElementById("messages");
       var statusLine = document.getElementById("status-line");
@@ -187,7 +232,7 @@
       var sendBtn = document.getElementById("send-btn");
 
       var currentMember = { id: "me", name: "You", initials: "Y" };
-      var lastRenderedIds = "";
+      var lastRenderedSignature = "";
 
       function initials(name) {
         return (name || "?")
@@ -214,22 +259,19 @@
       }
 
       function renderMessages(list) {
-        var idSignature = list
+        var signature = list
           .map(function (m) {
             return m.id;
           })
           .join(",");
-        // Cheap guard so we don't blow away the DOM (and scroll position)
-        // on every poll tick when nothing actually changed.
-        if (idSignature === lastRenderedIds) {
-          // Still refresh relative timestamps even if content is unchanged.
+        if (signature === lastRenderedSignature) {
           var timeEls = messagesEl.querySelectorAll("[data-ts]");
           timeEls.forEach(function (el) {
             el.textContent = timeAgo(Number(el.getAttribute("data-ts")));
           });
           return;
         }
-        lastRenderedIds = idSignature;
+        lastRenderedSignature = signature;
 
         messagesEl.innerHTML = "";
 
@@ -242,6 +284,8 @@
         }
 
         list.forEach(function (m) {
+          var own = isOwnMessage(m);
+
           var msg = document.createElement("div");
           msg.className = "msg";
 
@@ -250,6 +294,7 @@
           avatar.textContent = initials(m.name);
 
           var body = document.createElement("div");
+          body.className = "msg-body";
 
           var header = document.createElement("div");
           header.className = "msg-header";
@@ -275,27 +320,29 @@
 
           msg.appendChild(avatar);
           msg.appendChild(body);
+
+          // Delete button — only wired up (and only ever visible via CSS
+          // hover) for messages the current member authored.
+          var deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "delete-btn" + (own ? " is-own" : "");
+          deleteBtn.innerHTML = TRASH_ICON;
+          deleteBtn.title = "Delete message";
+          deleteBtn.setAttribute("aria-label", "Delete message");
+          if (own) {
+            deleteBtn.addEventListener("click", function () {
+              deleteMessage(m.id, deleteBtn);
+            });
+          } else {
+            deleteBtn.disabled = true;
+            deleteBtn.tabIndex = -1;
+          }
+          msg.appendChild(deleteBtn);
+
           messagesEl.appendChild(msg);
         });
 
         messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-
-      function loadMessages() {
-        return t.get("board", "shared", STORAGE_KEY, []);
-      }
-
-      function trimToFit(list) {
-        // Drop oldest messages until the serialized array fits Trello's
-        // per-key storage cap.
-        var trimmed = list.slice();
-        while (
-          trimmed.length &&
-          JSON.stringify(trimmed).length > MAX_STORED_CHARS
-        ) {
-          trimmed.shift();
-        }
-        return trimmed;
       }
 
       function refresh() {
@@ -314,15 +361,12 @@
 
         sendBtn.disabled = true;
 
-        // Re-fetch right before writing to minimize (not eliminate) the
-        // chance of clobbering another member's message that landed
-        // between polls. There's no locking without a real backend, so
-        // this is a best-effort, last-write-wins strategy.
         loadMessages()
           .then(function (list) {
             list = list || [];
             list.push({
               id: currentMember.id + "-" + Date.now(),
+              memberId: currentMember.id,
               name: currentMember.name,
               text: text,
               ts: Date.now(),
@@ -335,10 +379,11 @@
               });
           })
           .then(function (list) {
+            lastRenderedSignature = ""; // force re-render even if trimming kept the id set identical
             renderMessages(list);
             input.value = "";
           })
-          .catch(function (err) {
+          .catch(function () {
             statusLine.textContent = "Message failed to send.";
           })
           .finally(function () {
@@ -367,9 +412,6 @@
           refresh();
         });
 
-      // Simple polling so members see each other's messages without a
-      // real-time backend. Cleared automatically when the popup iframe
-      // is torn down.
       setInterval(refresh, POLL_INTERVAL_MS);
     </script>
   </body>
