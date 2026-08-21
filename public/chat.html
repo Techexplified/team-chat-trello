@@ -180,9 +180,78 @@
       var STORAGE_KEY = "messages";
       var MAX_STORED_CHARS = 3500;
       var POLL_INTERVAL_MS = 3000;
+      var lastRenderedIds = null;
 
       function loadMessages() {
         return t.get("board", "shared", STORAGE_KEY, []);
+      }
+
+      function renderMessages(list) {
+        var idSignature = list
+          .map(function (m) {
+            return m.id;
+          })
+          .join(",");
+        // Cheap guard so we don't blow away the DOM (and scroll position)
+        // on every poll tick when nothing actually changed.
+        if (idSignature === lastRenderedIds) {
+          // Still refresh relative timestamps even if content is unchanged.
+          var timeEls = messagesEl.querySelectorAll("[data-ts]");
+          timeEls.forEach(function (el) {
+            el.textContent = timeAgo(Number(el.getAttribute("data-ts")));
+          });
+          return;
+        }
+        lastRenderedIds = idSignature;
+
+        messagesEl.innerHTML = "";
+
+        if (!list.length) {
+          var empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "No messages yet. Say hi 👋";
+          messagesEl.appendChild(empty);
+          return;
+        }
+
+        list.forEach(function (m) {
+          var msg = document.createElement("div");
+          msg.className = "msg";
+
+          var avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.textContent = initials(m.name);
+
+          var body = document.createElement("div");
+
+          var header = document.createElement("div");
+          header.className = "msg-header";
+
+          var nameEl = document.createElement("span");
+          nameEl.className = "msg-name";
+          nameEl.textContent = m.name;
+
+          var timeEl = document.createElement("span");
+          timeEl.className = "msg-time";
+          timeEl.setAttribute("data-ts", m.ts);
+          timeEl.textContent = timeAgo(m.ts);
+
+          header.appendChild(nameEl);
+          header.appendChild(timeEl);
+
+          var textEl = document.createElement("div");
+          textEl.className = "msg-text";
+          textEl.textContent = m.text;
+
+          body.appendChild(header);
+          body.appendChild(textEl);
+
+          msg.appendChild(avatar);
+          msg.appendChild(body);
+          messagesEl.appendChild(msg);
+        });
+
+        messagesEl.scrollTop = messagesEl.scrollHeight;
       }
 
       function trimToFit(messages) {
