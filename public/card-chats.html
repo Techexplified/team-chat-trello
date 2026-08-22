@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Team Chat — Linked Messages</title>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background: transparent;
+      }
+
+      .wrap {
+        padding: 10px 14px 14px;
+        box-sizing: border-box;
+      }
+
+      .msg {
+        display: flex;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--ds-border, #dfe1e6);
+      }
+
+      .msg:last-child {
+        border-bottom: none;
+      }
+
+      .avatar {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border-radius: 50%;
+        background: #579dff;
+        color: #09326c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+      }
+
+      .msg-body {
+        min-width: 0;
+      }
+
+      .msg-header {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 2px;
+      }
+
+      .msg-name {
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--ds-text, #172b4d);
+      }
+
+      .msg-time {
+        font-size: 11px;
+        color: var(--ds-text-subtle, #6b778c);
+      }
+
+      .msg-text {
+        font-size: 13px;
+        color: var(--ds-text, #172b4d);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .status-line {
+        text-align: center;
+        color: var(--ds-text-subtle, #6b778c);
+        font-size: 13px;
+        padding: 16px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap" id="wrap">
+      <div class="status-line" id="status-line">Loading linked messages…</div>
+    </div>
+
+    <script>
+      var t = window.TrelloPowerUp.iframe({
+        appKey: "ae89c42ec46dffc9aa9823aa7d578b3a", // must match power-up.js and authorize.html
+        appName: "Team Chat",
+      });
+
+      var STORAGE_KEY = "messages";
+      var POLL_INTERVAL_MS = 5000;
+
+      var wrap = document.getElementById("wrap");
+      var lastSignature = "";
+
+      function initials(name) {
+        return (name || "?")
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(function (part) {
+            return part[0].toUpperCase();
+          })
+          .join("");
+      }
+
+      function timeAgo(ts) {
+        var diff = Math.max(0, Date.now() - ts);
+        var mins = Math.floor(diff / 60000);
+        if (mins < 1) return "a few seconds ago";
+        if (mins === 1) return "1 minute ago";
+        if (mins < 60) return mins + " minutes ago";
+        var hours = Math.floor(mins / 60);
+        if (hours === 1) return "1 hour ago";
+        if (hours < 24) return hours + " hours ago";
+        var days = Math.floor(hours / 24);
+        return days === 1 ? "1 day ago" : days + " days ago";
+      }
+
+      function render(list) {
+        var signature = list
+          .map(function (m) {
+            return m.id;
+          })
+          .join(",");
+        if (signature === lastSignature) return;
+        lastSignature = signature;
+
+        wrap.innerHTML = "";
+
+        if (!list.length) {
+          var empty = document.createElement("div");
+          empty.className = "status-line";
+          empty.textContent = "No chat messages linked to this card yet.";
+          wrap.appendChild(empty);
+          return;
+        }
+
+        list.forEach(function (m) {
+          var msg = document.createElement("div");
+          msg.className = "msg";
+
+          var avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.textContent = initials(m.name);
+
+          var body = document.createElement("div");
+          body.className = "msg-body";
+
+          var header = document.createElement("div");
+          header.className = "msg-header";
+
+          var nameEl = document.createElement("span");
+          nameEl.className = "msg-name";
+          nameEl.textContent = m.name;
+
+          var timeEl = document.createElement("span");
+          timeEl.className = "msg-time";
+          timeEl.textContent = timeAgo(m.ts);
+
+          header.appendChild(nameEl);
+          header.appendChild(timeEl);
+          body.appendChild(header);
+
+          if (m.text) {
+            var textEl = document.createElement("div");
+            textEl.className = "msg-text";
+            textEl.textContent = m.text;
+            body.appendChild(textEl);
+          }
+
+          msg.appendChild(avatar);
+          msg.appendChild(body);
+          wrap.appendChild(msg);
+        });
+      }
+
+      function refresh() {
+        t.card("id")
+          .then(function (card) {
+            return t
+              .get("board", "shared", STORAGE_KEY, [])
+              .then(function (list) {
+                var linked = (list || []).filter(function (m) {
+                  return m.cardId === card.id;
+                });
+                render(linked);
+              });
+          })
+          .catch(function () {
+            wrap.innerHTML =
+              '<div class="status-line">Could not load linked messages.</div>';
+          });
+      }
+
+      refresh();
+      setInterval(refresh, POLL_INTERVAL_MS);
+    </script>
+  </body>
+</html>

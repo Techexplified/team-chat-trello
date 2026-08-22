@@ -48,6 +48,17 @@ TrelloPowerUp.initialize(
           ];
         });
     },
+    "card-back-section": function (t) {
+      return {
+        title: "Team Chat",
+        icon: ICON,
+        content: {
+          type: "iframe",
+          url: "./card-chats.html",
+          height: 240,
+        },
+      };
+    },
   },
   {
     appKey: APP_KEY,
