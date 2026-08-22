@@ -1,849 +1,922 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Team Chat</title>
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #1d2125;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+  <head>
+    <meta charset="utf-8" />
+    <title>Team Chat</title>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #1d2125;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+      }
 
-    .chat-wrap {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      box-sizing: border-box;
-    }
+      .chat-wrap {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        box-sizing: border-box;
+      }
 
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
 
-    .msg {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-    }
+      .msg {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
 
-    .avatar {
-      width: 32px;
-      height: 32px;
-      min-width: 32px;
-      border-radius: 50%;
-      background: #579dff;
-      color: #09326c;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 13px;
-    }
+      .avatar {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 50%;
+        background: #579dff;
+        color: #09326c;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+      }
 
-    .msg-body {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+      .msg-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
 
-    .msg-header {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin-bottom: -2px;
-    }
+      .msg-header {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: -2px;
+      }
 
-    .msg-name {
-      font-weight: 600;
-      font-size: 13px;
-      color: #dcdfe4;
-    }
+      .msg-name {
+        font-weight: 600;
+        font-size: 13px;
+        color: #dcdfe4;
+      }
 
-    .msg-time {
-      font-size: 11px;
-      color: #8c9bab;
-    }
+      .msg-time {
+        font-size: 11px;
+        color: #8c9bab;
+      }
 
-    .msg-text {
-      display: inline-block;
-      align-self: flex-start;
-      font-size: 13px;
-      color: #b6c2cf;
-      background: #282e33;
-      border: 1px solid #38414a;
-      border-radius: 8px;
-      padding: 8px 12px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+      .msg-text {
+        display: inline-block;
+        align-self: flex-start;
+        font-size: 13px;
+        color: #b6c2cf;
+        background: #282e33;
+        border: 1px solid #38414a;
+        border-radius: 8px;
+        padding: 8px 12px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
 
-    .card-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      align-self: flex-start;
-      background: #1c2b3a;
-      border: 1px solid #2b5b8c;
-      color: #85b8ff;
-      border-radius: 999px;
-      padding: 5px 12px 5px 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      max-width: 100%;
-    }
+      .card-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        align-self: flex-start;
+        background: #1c2b3a;
+        border: 1px solid #2b5b8c;
+        color: #85b8ff;
+        border-radius: 999px;
+        padding: 5px 12px 5px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        max-width: 100%;
+      }
 
-    .card-pill:hover {
-      background: #24374a;
-    }
+      .card-pill:hover {
+        background: #24374a;
+      }
 
-    .card-pill svg {
-      width: 13px;
-      height: 13px;
-      min-width: 13px;
-      stroke: #85b8ff;
-    }
+      .card-pill svg {
+        width: 13px;
+        height: 13px;
+        min-width: 13px;
+        stroke: #85b8ff;
+      }
 
-    .card-pill span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+      .card-pill span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-    .delete-btn {
-      width: 28px;
-      height: 28px;
-      min-width: 28px;
-      border-radius: 6px;
-      background: #2c333a;
-      border: 1px solid #3d444b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.12s ease, background 0.12s ease;
-      align-self: center;
-    }
+      .delete-btn {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border-radius: 6px;
+        background: #2c333a;
+        border: 1px solid #3d444b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.12s ease,
+          background 0.12s ease;
+        align-self: center;
+      }
 
-    .msg:hover .delete-btn.is-own {
-      opacity: 1;
-      visibility: visible;
-    }
+      .msg:hover .delete-btn.is-own {
+        opacity: 1;
+        visibility: visible;
+      }
 
-    .delete-btn:hover {
-      background: #3d444b;
-    }
+      .delete-btn:hover {
+        background: #3d444b;
+      }
 
-    .delete-btn svg {
-      width: 14px;
-      height: 14px;
-      stroke: #b6c2cf;
-    }
+      .delete-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: #b6c2cf;
+      }
 
-    .delete-btn:disabled {
-      opacity: 0.5 !important;
-      cursor: default;
-    }
+      .delete-btn:disabled {
+        opacity: 0.5 !important;
+        cursor: default;
+      }
 
-    .empty-state, .status-line {
-      margin: auto;
-      text-align: center;
-      color: #8c9bab;
-      font-size: 13px;
-    }
+      .empty-state,
+      .status-line {
+        margin: auto;
+        text-align: center;
+        color: #8c9bab;
+        font-size: 13px;
+      }
 
-    /* --- attached-card chip above the input row --- */
-    .attached-row {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px 0;
-      background: #22272b;
-      box-sizing: border-box;
-    }
+      /* --- attached-card chip above the input row --- */
+      .attached-row {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px 0;
+        background: #22272b;
+        box-sizing: border-box;
+      }
 
-    .attached-row.visible {
-      display: flex;
-    }
+      .attached-row.visible {
+        display: flex;
+      }
 
-    .attached-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #1c2b3a;
-      border: 1px solid #2b5b8c;
-      color: #85b8ff;
-      border-radius: 6px;
-      padding: 5px 8px;
-      font-size: 12px;
-      font-weight: 600;
-      max-width: 100%;
-    }
+      .attached-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c2b3a;
+        border: 1px solid #2b5b8c;
+        color: #85b8ff;
+        border-radius: 6px;
+        padding: 5px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        max-width: 100%;
+      }
 
-    .attached-chip span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+      .attached-chip span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-    .attached-chip button {
-      background: none;
-      border: none;
-      color: #85b8ff;
-      cursor: pointer;
-      font-size: 14px;
-      line-height: 1;
-      padding: 0;
-    }
+      .attached-chip button {
+        background: none;
+        border: none;
+        color: #85b8ff;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 0;
+      }
 
-    .input-row {
-      display: flex;
-      gap: 8px;
-      padding: 10px;
-      background: #22272b;
-      border-top: 1px solid #3d444b;
-      box-sizing: border-box;
-      align-items: center;
-    }
+      .input-row {
+        display: flex;
+        gap: 8px;
+        padding: 10px;
+        background: #22272b;
+        border-top: 1px solid #3d444b;
+        box-sizing: border-box;
+        align-items: center;
+      }
 
-    .icon-btn {
-      width: 34px;
-      height: 34px;
-      min-width: 34px;
-      border-radius: 6px;
-      background: #2c333a;
-      border: 1px solid #3d444b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
+      .icon-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 6px;
+        background: #2c333a;
+        border: 1px solid #3d444b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
 
-    .icon-btn:hover {
-      background: #3d444b;
-    }
+      .icon-btn:hover {
+        background: #3d444b;
+      }
 
-    .icon-btn svg {
-      width: 16px;
-      height: 16px;
-      stroke: #b6c2cf;
-    }
+      .icon-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke: #b6c2cf;
+      }
 
-    .input-row input {
-      flex: 1;
-      background: #1d2125;
-      border: 1px solid #3d444b;
-      border-radius: 6px;
-      padding: 9px 10px;
-      color: #dcdfe4;
-      font-size: 13px;
-      outline: none;
-      min-width: 0;
-    }
+      .input-row input {
+        flex: 1;
+        background: #1d2125;
+        border: 1px solid #3d444b;
+        border-radius: 6px;
+        padding: 9px 10px;
+        color: #dcdfe4;
+        font-size: 13px;
+        outline: none;
+        min-width: 0;
+      }
 
-    .input-row input::placeholder {
-      color: #738496;
-    }
+      .input-row input::placeholder {
+        color: #738496;
+      }
 
-    .input-row input:focus {
-      border-color: #579dff;
-    }
+      .input-row input:focus {
+        border-color: #579dff;
+      }
 
-    .input-row button.send-btn {
-      background: #579dff;
-      color: #09326c;
-      border: none;
-      border-radius: 6px;
-      padding: 0 16px;
-      height: 34px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+      .input-row button.send-btn {
+        background: #579dff;
+        color: #09326c;
+        border: none;
+        border-radius: 6px;
+        padding: 0 16px;
+        height: 34px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-    .input-row button.send-btn:hover:not(:disabled) {
-      background: #85b8ff;
-    }
+      .input-row button.send-btn:hover:not(:disabled) {
+        background: #85b8ff;
+      }
 
-    .input-row button.send-btn:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
+      .input-row button.send-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
 
-    /* --- card picker overlay --- */
-    .picker-overlay {
-      position: absolute;
-      inset: 0;
-      background: #1d2125;
-      display: none;
-      flex-direction: column;
-      z-index: 10;
-    }
+      /* --- card picker overlay --- */
+      .picker-overlay {
+        position: absolute;
+        inset: 0;
+        background: #1d2125;
+        display: none;
+        flex-direction: column;
+        z-index: 10;
+      }
 
-    .picker-overlay.visible {
-      display: flex;
-    }
+      .picker-overlay.visible {
+        display: flex;
+      }
 
-    .picker-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px;
-      border-bottom: 1px solid #3d444b;
-    }
+      .picker-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px;
+        border-bottom: 1px solid #3d444b;
+      }
 
-    .picker-header input {
-      flex: 1;
-      background: #282e33;
-      border: 1px solid #3d444b;
-      border-radius: 6px;
-      padding: 8px 10px;
-      color: #dcdfe4;
-      font-size: 13px;
-      outline: none;
-    }
+      .picker-header input {
+        flex: 1;
+        background: #282e33;
+        border: 1px solid #3d444b;
+        border-radius: 6px;
+        padding: 8px 10px;
+        color: #dcdfe4;
+        font-size: 13px;
+        outline: none;
+      }
 
-    .picker-header input:focus {
-      border-color: #579dff;
-    }
+      .picker-header input:focus {
+        border-color: #579dff;
+      }
 
-    .picker-cancel {
-      background: none;
-      border: none;
-      color: #8c9bab;
-      font-size: 13px;
-      cursor: pointer;
-      padding: 4px 6px;
-    }
+      .picker-cancel {
+        background: none;
+        border: none;
+        color: #8c9bab;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 4px 6px;
+      }
 
-    .picker-cancel:hover {
-      color: #dcdfe4;
-    }
+      .picker-cancel:hover {
+        color: #dcdfe4;
+      }
 
-    .picker-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 6px 0;
-    }
+      .picker-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px 0;
+      }
 
-    .picker-group-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: #738496;
-      padding: 10px 14px 4px;
-    }
+      .picker-group-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #738496;
+        padding: 10px 14px 4px;
+      }
 
-    .picker-card {
-      display: block;
-      width: 100%;
-      text-align: left;
-      background: none;
-      border: none;
-      color: #b6c2cf;
-      font-size: 13px;
-      padding: 8px 14px;
-      cursor: pointer;
-    }
+      .picker-card {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        color: #b6c2cf;
+        font-size: 13px;
+        padding: 8px 14px;
+        cursor: pointer;
+      }
 
-    .picker-card:hover {
-      background: #282e33;
-    }
+      .picker-card:hover {
+        background: #282e33;
+      }
 
-    .picker-status {
-      margin: auto;
-      text-align: center;
-      color: #8c9bab;
-      font-size: 13px;
-      padding: 20px;
-    }
-  </style>
-</head>
-<body>
-  <div class="chat-wrap">
-    <div class="messages" id="messages">
-      <div class="status-line" id="status-line">Loading messages…</div>
-    </div>
+      .picker-status {
+        margin: auto;
+        text-align: center;
+        color: #8c9bab;
+        font-size: 13px;
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-wrap">
+      <div class="messages" id="messages">
+        <div class="status-line" id="status-line">Loading messages…</div>
+      </div>
 
-    <div class="attached-row" id="attached-row">
-      <div class="attached-chip" id="attached-chip">
-        <span id="attached-chip-name"></span>
-        <button type="button" id="attached-chip-remove" aria-label="Remove attached card">&times;</button>
+      <div class="attached-row" id="attached-row">
+        <div class="attached-chip" id="attached-chip">
+          <span id="attached-chip-name"></span>
+          <button
+            type="button"
+            id="attached-chip-remove"
+            aria-label="Remove attached card"
+          >
+            &times;
+          </button>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <button
+          class="icon-btn"
+          id="link-btn"
+          type="button"
+          title="Link a card"
+          aria-label="Link a card"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1.14 1.14"
+            ></path>
+            <path
+              d="M14 11a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1.14-1.14"
+            ></path>
+          </svg>
+        </button>
+        <input
+          type="text"
+          id="msg-input"
+          placeholder="Type your message here..."
+          maxlength="500"
+        />
+        <button class="send-btn" id="send-btn" type="button">Send</button>
+      </div>
+
+      <!-- Card picker, shown over the messages area when the link button is clicked -->
+      <div class="picker-overlay" id="picker-overlay">
+        <div class="picker-header">
+          <input type="text" id="picker-search" placeholder="Search cards..." />
+          <button class="picker-cancel" id="picker-cancel" type="button">
+            Cancel
+          </button>
+        </div>
+        <div class="picker-list" id="picker-list">
+          <div class="picker-status">Loading cards…</div>
+        </div>
       </div>
     </div>
 
-    <div class="input-row">
-      <button class="icon-btn" id="link-btn" type="button" title="Link a card" aria-label="Link a card">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1.14 1.14"></path>
-          <path d="M14 11a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1.14-1.14"></path>
-        </svg>
-      </button>
-      <input type="text" id="msg-input" placeholder="Type your message here..." maxlength="500" />
-      <button class="send-btn" id="send-btn" type="button">Send</button>
-    </div>
-
-    <!-- Card picker, shown over the messages area when the link button is clicked -->
-    <div class="picker-overlay" id="picker-overlay">
-      <div class="picker-header">
-        <input type="text" id="picker-search" placeholder="Search cards..." />
-        <button class="picker-cancel" id="picker-cancel" type="button">Cancel</button>
-      </div>
-      <div class="picker-list" id="picker-list">
-        <div class="picker-status">Loading cards…</div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    var t = window.TrelloPowerUp.iframe();
-
-    // ---------------------------------------------------------------
-    // Storage strategy: no database. Messages live in Trello's own
-    // Power-Up data store, at board scope / shared visibility, so
-    // every member on the board can read and write them via
-    // t.get('board', 'shared', 'messages') / t.set(...).
-    //
-    // Trello caps board+shared storage at 8192 characters TOTAL for
-    // this key. We keep a safety margin and drop the oldest messages
-    // once we get close, so the chat behaves like a rolling window of
-    // recent messages rather than an unbounded log.
-    // ---------------------------------------------------------------
-    var STORAGE_KEY = 'messages';
-    var MAX_STORED_CHARS = 7800; // stay under Trello's 8192 cap with margin
-    var POLL_INTERVAL_MS = 3000;
-
-    var TRASH_ICON =
-      '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-      '<polyline points="3 6 5 6 21 6"></polyline>' +
-      '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
-      '<path d="M10 11v6"></path><path d="M14 11v6"></path>' +
-      '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>' +
-      '</svg>';
-
-    var CARD_ICON =
-      '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-      '<rect x="3" y="4" width="18" height="16" rx="2"></rect>' +
-      '<line x1="7" y1="9" x2="17" y2="9"></line>' +
-      '<line x1="7" y1="13" x2="13" y2="13"></line>' +
-      '</svg>';
-
-    var messagesEl = document.getElementById('messages');
-    var statusLine = document.getElementById('status-line');
-    var input = document.getElementById('msg-input');
-    var sendBtn = document.getElementById('send-btn');
-
-    var linkBtn = document.getElementById('link-btn');
-    var pickerOverlay = document.getElementById('picker-overlay');
-    var pickerSearch = document.getElementById('picker-search');
-    var pickerCancel = document.getElementById('picker-cancel');
-    var pickerList = document.getElementById('picker-list');
-
-    var attachedRow = document.getElementById('attached-row');
-    var attachedChipName = document.getElementById('attached-chip-name');
-    var attachedChipRemove = document.getElementById('attached-chip-remove');
-
-    var currentMember = { id: 'me', name: 'You', initials: 'Y' };
-    var lastRenderedSignature = '';
-    var attachedCard = null; // { id, name, url }
-    var allCardsCache = null; // cached for the life of this popup session
-
-    function initials(name) {
-      return (name || '?')
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map(function (part) { return part[0].toUpperCase(); })
-        .join('');
-    }
-
-    function timeAgo(ts) {
-      var diff = Math.max(0, Date.now() - ts);
-      var mins = Math.floor(diff / 60000);
-      if (mins < 1) return 'a few seconds ago';
-      if (mins === 1) return '1 minute ago';
-      if (mins < 60) return mins + ' minutes ago';
-      var hours = Math.floor(mins / 60);
-      if (hours === 1) return '1 hour ago';
-      if (hours < 24) return hours + ' hours ago';
-      var days = Math.floor(hours / 24);
-      return days === 1 ? '1 day ago' : days + ' days ago';
-    }
-
-    // ---------------- messages: load / render / send / delete ----------------
-
-    function loadMessages() {
-      return t.get('board', 'shared', STORAGE_KEY, []);
-    }
-
-    function trimToFit(list) {
-      var trimmed = list.slice();
-      while (trimmed.length && JSON.stringify(trimmed).length > MAX_STORED_CHARS) {
-        trimmed.shift();
-      }
-      return trimmed;
-    }
-
-    function isOwnMessage(m) {
-      if (m.memberId) return m.memberId === currentMember.id;
-      return m.name === currentMember.name;
-    }
-
-    function renderMessages(list) {
-      var signature = list.map(function (m) { return m.id; }).join(',');
-      if (signature === lastRenderedSignature) {
-        var timeEls = messagesEl.querySelectorAll('[data-ts]');
-        timeEls.forEach(function (el) {
-          el.textContent = timeAgo(Number(el.getAttribute('data-ts')));
-        });
-        return;
-      }
-      lastRenderedSignature = signature;
-
-      messagesEl.innerHTML = '';
-
-      if (!list.length) {
-        var empty = document.createElement('div');
-        empty.className = 'empty-state';
-        empty.textContent = 'No messages yet. Say hi 👋';
-        messagesEl.appendChild(empty);
-        return;
-      }
-
-      list.forEach(function (m) {
-        var own = isOwnMessage(m);
-
-        var msg = document.createElement('div');
-        msg.className = 'msg';
-
-        var avatar = document.createElement('div');
-        avatar.className = 'avatar';
-        avatar.textContent = initials(m.name);
-
-        var body = document.createElement('div');
-        body.className = 'msg-body';
-
-        var header = document.createElement('div');
-        header.className = 'msg-header';
-
-        var nameEl = document.createElement('span');
-        nameEl.className = 'msg-name';
-        nameEl.textContent = m.name;
-
-        var timeEl = document.createElement('span');
-        timeEl.className = 'msg-time';
-        timeEl.setAttribute('data-ts', m.ts);
-        timeEl.textContent = timeAgo(m.ts);
-
-        header.appendChild(nameEl);
-        header.appendChild(timeEl);
-        body.appendChild(header);
-
-        if (m.text) {
-          var textEl = document.createElement('div');
-          textEl.className = 'msg-text';
-          textEl.textContent = m.text;
-          body.appendChild(textEl);
-        }
-
-        if (m.cardId && m.cardName) {
-          var pill = document.createElement('button');
-          pill.type = 'button';
-          pill.className = 'card-pill';
-          pill.innerHTML = CARD_ICON + '<span></span>';
-          pill.querySelector('span').textContent = m.cardName;
-          pill.title = 'Open card: ' + m.cardName;
-          pill.addEventListener('click', function () {
-            t.showCard(m.cardId).catch(function () {
-              if (m.cardUrl) window.open(m.cardUrl, '_blank');
-            });
-          });
-          body.appendChild(pill);
-        }
-
-        msg.appendChild(avatar);
-        msg.appendChild(body);
-
-        var deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
-        deleteBtn.className = 'delete-btn' + (own ? ' is-own' : '');
-        deleteBtn.innerHTML = TRASH_ICON;
-        deleteBtn.title = 'Delete message';
-        deleteBtn.setAttribute('aria-label', 'Delete message');
-        if (own) {
-          deleteBtn.addEventListener('click', function () {
-            deleteMessage(m.id, deleteBtn);
-          });
-        } else {
-          deleteBtn.disabled = true;
-          deleteBtn.tabIndex = -1;
-        }
-        msg.appendChild(deleteBtn);
-
-        messagesEl.appendChild(msg);
+    <script>
+      var t = window.TrelloPowerUp.iframe({
+        appKey: "ae89c42ec46dffc9aa9823aa7d578b3a", // must match power-up.js and authorize.html
+        appName: "Team Chat",
       });
 
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+      // ---------------------------------------------------------------
+      // Storage strategy: no database. Messages live in Trello's own
+      // Power-Up data store, at board scope / shared visibility, so
+      // every member on the board can read and write them via
+      // t.get('board', 'shared', 'messages') / t.set(...).
+      //
+      // Trello caps board+shared storage at 8192 characters TOTAL for
+      // this key. We keep a safety margin and drop the oldest messages
+      // once we get close, so the chat behaves like a rolling window of
+      // recent messages rather than an unbounded log.
+      // ---------------------------------------------------------------
+      var STORAGE_KEY = "messages";
+      var MAX_STORED_CHARS = 7800; // stay under Trello's 8192 cap with margin
+      var POLL_INTERVAL_MS = 3000;
 
-    function refresh() {
-      loadMessages()
-        .then(function (list) {
-          renderMessages(list || []);
-        })
-        .catch(function () {
-          statusLine.textContent = 'Could not load messages.';
-        });
-    }
+      var TRASH_ICON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polyline points="3 6 5 6 21 6"></polyline>' +
+        '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
+        '<path d="M10 11v6"></path><path d="M14 11v6"></path>' +
+        '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>' +
+        "</svg>";
 
-    function updateSendEnabled() {
-      var hasContent = input.value.trim().length > 0 || !!attachedCard;
-      sendBtn.disabled = !hasContent;
-    }
+      var CARD_ICON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="3" y="4" width="18" height="16" rx="2"></rect>' +
+        '<line x1="7" y1="9" x2="17" y2="9"></line>' +
+        '<line x1="7" y1="13" x2="13" y2="13"></line>' +
+        "</svg>";
 
-    function setAttachedCard(card) {
-      attachedCard = card;
-      if (card) {
-        attachedChipName.textContent = card.name;
-        attachedRow.classList.add('visible');
-      } else {
-        attachedRow.classList.remove('visible');
-      }
-      updateSendEnabled();
-    }
+      var messagesEl = document.getElementById("messages");
+      var statusLine = document.getElementById("status-line");
+      var input = document.getElementById("msg-input");
+      var sendBtn = document.getElementById("send-btn");
 
-    function sendMessage() {
-      var text = input.value.trim();
-      if (!text && !attachedCard) return;
+      var linkBtn = document.getElementById("link-btn");
+      var pickerOverlay = document.getElementById("picker-overlay");
+      var pickerSearch = document.getElementById("picker-search");
+      var pickerCancel = document.getElementById("picker-cancel");
+      var pickerList = document.getElementById("picker-list");
 
-      sendBtn.disabled = true;
+      var attachedRow = document.getElementById("attached-row");
+      var attachedChipName = document.getElementById("attached-chip-name");
+      var attachedChipRemove = document.getElementById("attached-chip-remove");
 
-      loadMessages()
-        .then(function (list) {
-          list = list || [];
-          var entry = {
-            id: currentMember.id + '-' + Date.now(),
-            memberId: currentMember.id,
-            name: currentMember.name,
-            text: text,
-            ts: Date.now(),
-          };
-          if (attachedCard) {
-            entry.cardId = attachedCard.id;
-            entry.cardName = attachedCard.name;
-            entry.cardUrl = attachedCard.url;
-          }
-          list.push(entry);
-          list = trimToFit(list);
-          return t.set('board', 'shared', STORAGE_KEY, list).then(function () {
-            return list;
-          });
-        })
-        .then(function (list) {
-          lastRenderedSignature = '';
-          renderMessages(list);
-          input.value = '';
-          setAttachedCard(null);
-        })
-        .catch(function () {
-          statusLine.textContent = 'Message failed to send.';
-        })
-        .finally(function () {
-          updateSendEnabled();
-          input.focus();
-        });
-    }
+      var currentMember = { id: "me", name: "You", initials: "Y" };
+      var lastRenderedSignature = "";
+      var attachedCard = null; // { id, name, url }
+      var allCardsCache = null; // cached for the life of this popup session
 
-    function deleteMessage(id, btnEl) {
-      if (btnEl) btnEl.disabled = true;
-
-      loadMessages()
-        .then(function (list) {
-          list = list || [];
-          var target = list.find(function (m) { return m.id === id; });
-          if (!target || !isOwnMessage(target)) {
-            return list;
-          }
-          var next = list.filter(function (m) { return m.id !== id; });
-          return t.set('board', 'shared', STORAGE_KEY, next).then(function () {
-            return next;
-          });
-        })
-        .then(function (list) {
-          lastRenderedSignature = '';
-          renderMessages(list);
-        })
-        .catch(function () {
-          statusLine.textContent = 'Could not delete message.';
-          if (btnEl) btnEl.disabled = false;
-        });
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('input', updateSendEnabled);
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') sendMessage();
-    });
-
-    attachedChipRemove.addEventListener('click', function () {
-      setAttachedCard(null);
-    });
-
-    // ---------------- card picker ----------------
-
-    function openPicker() {
-      pickerOverlay.classList.add('visible');
-      pickerSearch.value = '';
-      pickerSearch.focus();
-
-      if (allCardsCache) {
-        renderPickerList(allCardsCache, '');
-        return;
+      function initials(name) {
+        return (name || "?")
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(function (part) {
+            return part[0].toUpperCase();
+          })
+          .join("");
       }
 
-      pickerList.innerHTML = '<div class="picker-status">Loading cards…</div>';
-      fetchBoardCards()
-        .then(function (grouped) {
-          allCardsCache = grouped;
-          renderPickerList(grouped, '');
-        })
-        .catch(function () {
-          pickerList.innerHTML = '<div class="picker-status">Could not load cards. Make sure the Power-Up is authorized.</div>';
-        });
-    }
+      function timeAgo(ts) {
+        var diff = Math.max(0, Date.now() - ts);
+        var mins = Math.floor(diff / 60000);
+        if (mins < 1) return "a few seconds ago";
+        if (mins === 1) return "1 minute ago";
+        if (mins < 60) return mins + " minutes ago";
+        var hours = Math.floor(mins / 60);
+        if (hours === 1) return "1 hour ago";
+        if (hours < 24) return hours + " hours ago";
+        var days = Math.floor(hours / 24);
+        return days === 1 ? "1 day ago" : days + " days ago";
+      }
 
-    function closePicker() {
-      pickerOverlay.classList.remove('visible');
-    }
+      // ---------------- messages: load / render / send / delete ----------------
 
-    function fetchBoardCards() {
-      var appKey = t.getRestApi().appKey;
-      var boardId;
+      function loadMessages() {
+        return t.get("board", "shared", STORAGE_KEY, []);
+      }
 
-      return t
-        .board('id')
-        .then(function (board) {
-          boardId = board.id;
-          return t.getRestApi().getToken();
-        })
-        .then(function (token) {
-          if (!token) {
-            throw new Error('not authorized');
+      function trimToFit(list) {
+        var trimmed = list.slice();
+        while (
+          trimmed.length &&
+          JSON.stringify(trimmed).length > MAX_STORED_CHARS
+        ) {
+          trimmed.shift();
+        }
+        return trimmed;
+      }
+
+      function isOwnMessage(m) {
+        if (m.memberId) return m.memberId === currentMember.id;
+        return m.name === currentMember.name;
+      }
+
+      function renderMessages(list) {
+        var signature = list
+          .map(function (m) {
+            return m.id;
+          })
+          .join(",");
+        if (signature === lastRenderedSignature) {
+          var timeEls = messagesEl.querySelectorAll("[data-ts]");
+          timeEls.forEach(function (el) {
+            el.textContent = timeAgo(Number(el.getAttribute("data-ts")));
+          });
+          return;
+        }
+        lastRenderedSignature = signature;
+
+        messagesEl.innerHTML = "";
+
+        if (!list.length) {
+          var empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "No messages yet. Say hi 👋";
+          messagesEl.appendChild(empty);
+          return;
+        }
+
+        list.forEach(function (m) {
+          var own = isOwnMessage(m);
+
+          var msg = document.createElement("div");
+          msg.className = "msg";
+
+          var avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.textContent = initials(m.name);
+
+          var body = document.createElement("div");
+          body.className = "msg-body";
+
+          var header = document.createElement("div");
+          header.className = "msg-header";
+
+          var nameEl = document.createElement("span");
+          nameEl.className = "msg-name";
+          nameEl.textContent = m.name;
+
+          var timeEl = document.createElement("span");
+          timeEl.className = "msg-time";
+          timeEl.setAttribute("data-ts", m.ts);
+          timeEl.textContent = timeAgo(m.ts);
+
+          header.appendChild(nameEl);
+          header.appendChild(timeEl);
+          body.appendChild(header);
+
+          if (m.text) {
+            var textEl = document.createElement("div");
+            textEl.className = "msg-text";
+            textEl.textContent = m.text;
+            body.appendChild(textEl);
           }
-          var base = 'https://api.trello.com/1/boards/' + boardId;
-          var qs = '?key=' + encodeURIComponent(appKey) + '&token=' + encodeURIComponent(token);
 
-          return Promise.all([
-            fetch(base + '/lists' + qs + '&fields=name').then(function (r) { return r.json(); }),
-            fetch(base + '/cards/open' + qs + '&fields=name,url,idList').then(function (r) { return r.json(); }),
-          ]);
-        })
-        .then(function (results) {
-          var lists = results[0] || [];
-          var cards = results[1] || [];
+          if (m.cardId && m.cardName) {
+            var pill = document.createElement("button");
+            pill.type = "button";
+            pill.className = "card-pill";
+            pill.innerHTML = CARD_ICON + "<span></span>";
+            pill.querySelector("span").textContent = m.cardName;
+            pill.title = "Open card: " + m.cardName;
+            pill.addEventListener("click", function () {
+              t.showCard(m.cardId).catch(function () {
+                if (m.cardUrl) window.open(m.cardUrl, "_blank");
+              });
+            });
+            body.appendChild(pill);
+          }
 
-          var listNames = {};
-          lists.forEach(function (l) { listNames[l.id] = l.name; });
+          msg.appendChild(avatar);
+          msg.appendChild(body);
 
-          var groups = {};
-          var order = [];
-          cards.forEach(function (c) {
-            var listName = listNames[c.idList] || 'Other';
-            if (!groups[listName]) {
-              groups[listName] = [];
-              order.push(listName);
+          var deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "delete-btn" + (own ? " is-own" : "");
+          deleteBtn.innerHTML = TRASH_ICON;
+          deleteBtn.title = "Delete message";
+          deleteBtn.setAttribute("aria-label", "Delete message");
+          if (own) {
+            deleteBtn.addEventListener("click", function () {
+              deleteMessage(m.id, deleteBtn);
+            });
+          } else {
+            deleteBtn.disabled = true;
+            deleteBtn.tabIndex = -1;
+          }
+          msg.appendChild(deleteBtn);
+
+          messagesEl.appendChild(msg);
+        });
+
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function refresh() {
+        loadMessages()
+          .then(function (list) {
+            renderMessages(list || []);
+          })
+          .catch(function () {
+            statusLine.textContent = "Could not load messages.";
+          });
+      }
+
+      function updateSendEnabled() {
+        var hasContent = input.value.trim().length > 0 || !!attachedCard;
+        sendBtn.disabled = !hasContent;
+      }
+
+      function setAttachedCard(card) {
+        attachedCard = card;
+        if (card) {
+          attachedChipName.textContent = card.name;
+          attachedRow.classList.add("visible");
+        } else {
+          attachedRow.classList.remove("visible");
+        }
+        updateSendEnabled();
+      }
+
+      function sendMessage() {
+        var text = input.value.trim();
+        if (!text && !attachedCard) return;
+
+        sendBtn.disabled = true;
+
+        loadMessages()
+          .then(function (list) {
+            list = list || [];
+            var entry = {
+              id: currentMember.id + "-" + Date.now(),
+              memberId: currentMember.id,
+              name: currentMember.name,
+              text: text,
+              ts: Date.now(),
+            };
+            if (attachedCard) {
+              entry.cardId = attachedCard.id;
+              entry.cardName = attachedCard.name;
+              entry.cardUrl = attachedCard.url;
             }
-            groups[listName].push({ id: c.id, name: c.name, url: c.url });
-          });
-
-          return order.map(function (listName) {
-            return { listName: listName, cards: groups[listName] };
-          });
-        });
-    }
-
-    function renderPickerList(groups, query) {
-      var q = query.trim().toLowerCase();
-      pickerList.innerHTML = '';
-
-      var anyResults = false;
-
-      groups.forEach(function (group) {
-        var filtered = q
-          ? group.cards.filter(function (c) { return c.name.toLowerCase().indexOf(q) !== -1; })
-          : group.cards;
-
-        if (!filtered.length) return;
-        anyResults = true;
-
-        var title = document.createElement('div');
-        title.className = 'picker-group-title';
-        title.textContent = group.listName;
-        pickerList.appendChild(title);
-
-        filtered.forEach(function (card) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'picker-card';
-          btn.textContent = card.name;
-          btn.addEventListener('click', function () {
-            setAttachedCard(card);
-            closePicker();
+            list.push(entry);
+            list = trimToFit(list);
+            return t
+              .set("board", "shared", STORAGE_KEY, list)
+              .then(function () {
+                return list;
+              });
+          })
+          .then(function (list) {
+            lastRenderedSignature = "";
+            renderMessages(list);
+            input.value = "";
+            setAttachedCard(null);
+          })
+          .catch(function () {
+            statusLine.textContent = "Message failed to send.";
+          })
+          .finally(function () {
+            updateSendEnabled();
             input.focus();
           });
-          pickerList.appendChild(btn);
-        });
-      });
-
-      if (!anyResults) {
-        var status = document.createElement('div');
-        status.className = 'picker-status';
-        status.textContent = q ? 'No cards match "' + query + '".' : 'No cards on this board yet.';
-        pickerList.appendChild(status);
       }
-    }
 
-    linkBtn.addEventListener('click', openPicker);
-    pickerCancel.addEventListener('click', closePicker);
-    pickerSearch.addEventListener('input', function () {
-      if (allCardsCache) renderPickerList(allCardsCache, pickerSearch.value);
-    });
+      function deleteMessage(id, btnEl) {
+        if (btnEl) btnEl.disabled = true;
 
-    // ---------------- init ----------------
+        loadMessages()
+          .then(function (list) {
+            list = list || [];
+            var target = list.find(function (m) {
+              return m.id === id;
+            });
+            if (!target || !isOwnMessage(target)) {
+              return list;
+            }
+            var next = list.filter(function (m) {
+              return m.id !== id;
+            });
+            return t
+              .set("board", "shared", STORAGE_KEY, next)
+              .then(function () {
+                return next;
+              });
+          })
+          .then(function (list) {
+            lastRenderedSignature = "";
+            renderMessages(list);
+          })
+          .catch(function () {
+            statusLine.textContent = "Could not delete message.";
+            if (btnEl) btnEl.disabled = false;
+          });
+      }
 
-    t.member('all')
-      .then(function (member) {
-        if (member) {
-          currentMember = {
-            id: member.id,
-            name: member.fullName || 'Member',
-            initials: member.initials || initials(member.fullName),
-          };
-        }
-        refresh();
-        updateSendEnabled();
-      })
-      .catch(function () {
-        refresh();
-        updateSendEnabled();
+      sendBtn.addEventListener("click", sendMessage);
+      input.addEventListener("input", updateSendEnabled);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") sendMessage();
       });
 
-    setInterval(refresh, POLL_INTERVAL_MS);
-  </script>
-</body>
+      attachedChipRemove.addEventListener("click", function () {
+        setAttachedCard(null);
+      });
+
+      // ---------------- card picker ----------------
+
+      function openPicker() {
+        pickerOverlay.classList.add("visible");
+        pickerSearch.value = "";
+        pickerSearch.focus();
+
+        if (allCardsCache) {
+          renderPickerList(allCardsCache, "");
+          return;
+        }
+
+        pickerList.innerHTML =
+          '<div class="picker-status">Loading cards…</div>';
+        fetchBoardCards()
+          .then(function (grouped) {
+            allCardsCache = grouped;
+            renderPickerList(grouped, "");
+          })
+          .catch(function () {
+            pickerList.innerHTML =
+              '<div class="picker-status">Could not load cards. Make sure the Power-Up is authorized.</div>';
+          });
+      }
+
+      function closePicker() {
+        pickerOverlay.classList.remove("visible");
+      }
+
+      function fetchBoardCards() {
+        var appKey = t.getRestApi().appKey;
+        var boardId;
+
+        return t
+          .board("id")
+          .then(function (board) {
+            boardId = board.id;
+            return t.getRestApi().getToken();
+          })
+          .then(function (token) {
+            if (!token) {
+              throw new Error("not authorized");
+            }
+            var base = "https://api.trello.com/1/boards/" + boardId;
+            var qs =
+              "?key=" +
+              encodeURIComponent(appKey) +
+              "&token=" +
+              encodeURIComponent(token);
+
+            return Promise.all([
+              fetch(base + "/lists" + qs + "&fields=name").then(function (r) {
+                return r.json();
+              }),
+              fetch(base + "/cards/open" + qs + "&fields=name,url,idList").then(
+                function (r) {
+                  return r.json();
+                },
+              ),
+            ]);
+          })
+          .then(function (results) {
+            var lists = results[0] || [];
+            var cards = results[1] || [];
+
+            var listNames = {};
+            lists.forEach(function (l) {
+              listNames[l.id] = l.name;
+            });
+
+            var groups = {};
+            var order = [];
+            cards.forEach(function (c) {
+              var listName = listNames[c.idList] || "Other";
+              if (!groups[listName]) {
+                groups[listName] = [];
+                order.push(listName);
+              }
+              groups[listName].push({ id: c.id, name: c.name, url: c.url });
+            });
+
+            return order.map(function (listName) {
+              return { listName: listName, cards: groups[listName] };
+            });
+          });
+      }
+
+      function renderPickerList(groups, query) {
+        var q = query.trim().toLowerCase();
+        pickerList.innerHTML = "";
+
+        var anyResults = false;
+
+        groups.forEach(function (group) {
+          var filtered = q
+            ? group.cards.filter(function (c) {
+                return c.name.toLowerCase().indexOf(q) !== -1;
+              })
+            : group.cards;
+
+          if (!filtered.length) return;
+          anyResults = true;
+
+          var title = document.createElement("div");
+          title.className = "picker-group-title";
+          title.textContent = group.listName;
+          pickerList.appendChild(title);
+
+          filtered.forEach(function (card) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "picker-card";
+            btn.textContent = card.name;
+            btn.addEventListener("click", function () {
+              setAttachedCard(card);
+              closePicker();
+              input.focus();
+            });
+            pickerList.appendChild(btn);
+          });
+        });
+
+        if (!anyResults) {
+          var status = document.createElement("div");
+          status.className = "picker-status";
+          status.textContent = q
+            ? 'No cards match "' + query + '".'
+            : "No cards on this board yet.";
+          pickerList.appendChild(status);
+        }
+      }
+
+      linkBtn.addEventListener("click", openPicker);
+      pickerCancel.addEventListener("click", closePicker);
+      pickerSearch.addEventListener("input", function () {
+        if (allCardsCache) renderPickerList(allCardsCache, pickerSearch.value);
+      });
+
+      // ---------------- init ----------------
+
+      t.member("all")
+        .then(function (member) {
+          if (member) {
+            currentMember = {
+              id: member.id,
+              name: member.fullName || "Member",
+              initials: member.initials || initials(member.fullName),
+            };
+          }
+          refresh();
+          updateSendEnabled();
+        })
+        .catch(function () {
+          refresh();
+          updateSendEnabled();
+        });
+
+      setInterval(refresh, POLL_INTERVAL_MS);
+    </script>
+  </body>
 </html>
