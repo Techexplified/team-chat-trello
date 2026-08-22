@@ -193,9 +193,11 @@
                 render(linked);
               });
           })
-          .catch(function () {
+          .catch(function (err) {
             wrap.innerHTML =
-              '<div class="status-line">Could not load linked messages.</div>';
+              '<div class="status-line">Could not load linked messages: ' +
+              (err && err.message ? err.message : String(err)) +
+              "</div>";
           });
       }
 
