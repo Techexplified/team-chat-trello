@@ -54,7 +54,7 @@ TrelloPowerUp.initialize(
         icon: ICON,
         content: {
           type: "iframe",
-          url: "./card-chats.html",
+          url: t.signUrl("./card-chats.html"),
           height: 240,
         },
       };
