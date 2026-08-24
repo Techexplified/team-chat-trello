@@ -35,8 +35,17 @@
 
       .msg {
         display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border: 1px solid rgba(87, 157, 255, 0.35);
+        border-radius: 14px;
+        padding: 14px 16px;
+      }
+
+      .msg-top {
+        display: flex;
+        align-items: center;
         gap: 10px;
-        align-items: flex-start;
       }
 
       .avatar {
@@ -53,43 +62,33 @@
         font-size: 13px;
       }
 
-      .msg-body {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-
-      .msg-header {
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-        margin-bottom: -2px;
-      }
-
       .msg-name {
-        font-weight: 600;
-        font-size: 13px;
-        color: #dcdfe4;
+        font-weight: 700;
+        font-size: 14px;
+        color: #eaeef2;
       }
 
       .msg-time {
-        font-size: 11px;
+        font-size: 12px;
         color: #8c9bab;
       }
 
       .msg-text {
-        display: inline-block;
-        align-self: flex-start;
-        font-size: 13px;
-        color: #b6c2cf;
-        background: #282e33;
-        border: 1px solid #38414a;
-        border-radius: 8px;
-        padding: 8px 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #dfe4e8;
+        background: #20262c;
+        border: 1px solid #2d353c;
+        border-radius: 10px;
+        padding: 12px 14px;
         white-space: pre-wrap;
         word-break: break-word;
+      }
+
+      .msg-footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
 
       .card-pill {
@@ -126,27 +125,18 @@
       }
 
       .delete-btn {
-        width: 28px;
-        height: 28px;
-        min-width: 28px;
-        border-radius: 6px;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 8px;
         background: #2c333a;
         border: 1px solid #3d444b;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        opacity: 0;
-        visibility: hidden;
-        transition:
-          opacity 0.12s ease,
-          background 0.12s ease;
-        align-self: center;
-      }
-
-      .msg:hover .delete-btn.is-own {
-        opacity: 1;
-        visibility: visible;
+        margin-left: auto;
+        transition: background 0.12s ease;
       }
 
       .delete-btn:hover {
@@ -157,11 +147,6 @@
         width: 14px;
         height: 14px;
         stroke: #b6c2cf;
-      }
-
-      .delete-btn:disabled {
-        opacity: 0.5 !important;
-        cursor: default;
       }
 
       .empty-state,
@@ -610,15 +595,12 @@
           var msg = document.createElement("div");
           msg.className = "msg";
 
+          var top = document.createElement("div");
+          top.className = "msg-top";
+
           var avatar = document.createElement("div");
           avatar.className = "avatar";
           avatar.textContent = initials(m.name);
-
-          var body = document.createElement("div");
-          body.className = "msg-body";
-
-          var header = document.createElement("div");
-          header.className = "msg-header";
 
           var nameEl = document.createElement("span");
           nameEl.className = "msg-name";
@@ -629,19 +611,21 @@
           timeEl.setAttribute("data-ts", m.ts);
           timeEl.textContent = timeAgo(m.ts);
 
-          header.appendChild(nameEl);
-          header.appendChild(timeEl);
-          body.appendChild(header);
+          top.appendChild(avatar);
+          top.appendChild(nameEl);
+          top.appendChild(timeEl);
+          msg.appendChild(top);
 
           if (m.text) {
             var textEl = document.createElement("div");
             textEl.className = "msg-text";
             textEl.textContent = m.text;
-            body.appendChild(textEl);
+            msg.appendChild(textEl);
           }
 
+          var pill = null;
           if (m.cardId && m.cardName) {
-            var pill = document.createElement("button");
+            pill = document.createElement("button");
             pill.type = "button";
             pill.className = "card-pill";
             pill.innerHTML = CARD_ICON + "<span></span>";
@@ -652,27 +636,29 @@
                 if (m.cardUrl) window.open(m.cardUrl, "_blank");
               });
             });
-            body.appendChild(pill);
           }
 
-          msg.appendChild(avatar);
-          msg.appendChild(body);
-
-          var deleteBtn = document.createElement("button");
-          deleteBtn.type = "button";
-          deleteBtn.className = "delete-btn" + (own ? " is-own" : "");
-          deleteBtn.innerHTML = TRASH_ICON;
-          deleteBtn.title = "Delete message";
-          deleteBtn.setAttribute("aria-label", "Delete message");
-          if (own) {
-            deleteBtn.addEventListener("click", function () {
-              deleteMessage(m.id, deleteBtn);
-            });
-          } else {
-            deleteBtn.disabled = true;
-            deleteBtn.tabIndex = -1;
+          // Only add a footer row (and only add the delete button) when
+          // there's actually something to put in it — a linked card, or
+          // this being a message the current member can delete.
+          if (pill || own) {
+            var footer = document.createElement("div");
+            footer.className = "msg-footer";
+            if (pill) footer.appendChild(pill);
+            if (own) {
+              var deleteBtn = document.createElement("button");
+              deleteBtn.type = "button";
+              deleteBtn.className = "delete-btn";
+              deleteBtn.innerHTML = TRASH_ICON;
+              deleteBtn.title = "Delete message";
+              deleteBtn.setAttribute("aria-label", "Delete message");
+              deleteBtn.addEventListener("click", function () {
+                deleteMessage(m.id, deleteBtn);
+              });
+              footer.appendChild(deleteBtn);
+            }
+            msg.appendChild(footer);
           }
-          msg.appendChild(deleteBtn);
 
           messagesEl.appendChild(msg);
         });
