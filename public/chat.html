@@ -324,20 +324,21 @@
       }
 
       .picker-header input:focus {
-        border-color: #579dff;
+        border-color: #7c7fee;
       }
 
       .picker-cancel {
         background: none;
         border: none;
-        color: #8c9bab;
+        color: #8b8cf5;
         font-size: 13px;
+        font-weight: 600;
         cursor: pointer;
         padding: 4px 6px;
       }
 
       .picker-cancel:hover {
-        color: #dcdfe4;
+        color: #a6a7ff;
       }
 
       .picker-list {
@@ -347,28 +348,52 @@
       }
 
       .picker-group-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.03em;
-        color: #738496;
-        padding: 10px 14px 4px;
+        color: #8b8cf5;
+        padding: 14px 14px 8px;
+      }
+
+      .picker-group-title svg {
+        width: 13px;
+        height: 13px;
+        stroke: #8b8cf5;
       }
 
       .picker-card {
-        display: block;
-        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: calc(100% - 28px);
         text-align: left;
-        background: none;
-        border: none;
-        color: #b6c2cf;
+        background: rgba(124, 124, 240, 0.06);
+        border: 1px solid rgba(124, 124, 240, 0.28);
+        border-radius: 10px;
+        color: #dcdfe4;
         font-size: 13px;
-        padding: 8px 14px;
+        padding: 12px 14px;
+        margin: 0 14px 8px;
         cursor: pointer;
+        box-sizing: border-box;
       }
 
-      .picker-card:hover {
-        background: #282e33;
+      .picker-card svg {
+        width: 15px;
+        height: 15px;
+        min-width: 15px;
+        stroke: #8b8cf5;
+      }
+
+      .picker-card:hover,
+      .picker-card:focus {
+        background: rgba(124, 124, 240, 0.16);
+        border-color: #7c7fee;
+        outline: none;
       }
 
       .picker-status {
@@ -479,6 +504,13 @@
         '<rect x="3" y="4" width="18" height="16" rx="2"></rect>' +
         '<line x1="7" y1="9" x2="17" y2="9"></line>' +
         '<line x1="7" y1="13" x2="13" y2="13"></line>' +
+        "</svg>";
+
+      var GROUP_ICON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="3" y="4" width="18" height="4" rx="1"></rect>' +
+        '<rect x="3" y="10" width="18" height="4" rx="1"></rect>' +
+        '<rect x="3" y="16" width="18" height="4" rx="1"></rect>' +
         "</svg>";
 
       var messagesEl = document.getElementById("messages");
@@ -864,14 +896,16 @@
 
           var title = document.createElement("div");
           title.className = "picker-group-title";
-          title.textContent = group.listName;
+          title.innerHTML = GROUP_ICON + "<span></span>";
+          title.querySelector("span").textContent = group.listName;
           pickerList.appendChild(title);
 
           filtered.forEach(function (card) {
             var btn = document.createElement("button");
             btn.type = "button";
             btn.className = "picker-card";
-            btn.textContent = card.name;
+            btn.innerHTML = CARD_ICON + "<span></span>";
+            btn.querySelector("span").textContent = card.name;
             btn.addEventListener("click", function () {
               setAttachedCard(card);
               closePicker();
