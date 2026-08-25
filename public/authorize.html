@@ -70,13 +70,6 @@
         line-height: 48px;
         margin: 0 auto 14px;
       }
-      .done-btn {
-        background: #f1f2f4;
-        color: #172b4d;
-      }
-      .done-btn:hover:not(:disabled) {
-        background: #dcdfe4;
-      }
     </style>
   </head>
   <body>
@@ -94,7 +87,6 @@
         <div class="check-circle">&#10003;</div>
         <h1>You're all set!</h1>
         <p>Team Chat is now authorized on this board.</p>
-        <button id="done-btn" type="button" class="done-btn">Done</button>
       </div>
     </div>
 
@@ -111,7 +103,6 @@
       var authorizeView = document.getElementById("authorize-view");
       var successView = document.getElementById("success-view");
       var btn = document.getElementById("authorize-btn");
-      var doneBtn = document.getElementById("done-btn");
       var errorMsg = document.getElementById("error-msg");
 
       function showSuccess() {
@@ -145,10 +136,6 @@
               errorMsg.textContent = "Something went wrong. Please try again.";
             }
           });
-      });
-
-      doneBtn.addEventListener("click", function () {
-        t.closePopup();
       });
 
       // If the member already authorized in a previous session and somehow
